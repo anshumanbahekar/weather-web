@@ -41,3 +41,4 @@ async function getWeather() {
 }
 
 getWeather();
+setInterval(getWeather, 600000); // refresh every 10 mins
