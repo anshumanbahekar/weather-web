@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.10/css/weather-icons.min.css"/>
 <style>
 :root {
   --bg: #0a0e1a;
@@ -344,8 +345,8 @@ body.is-day   { --bg: #0a0e1a; }
         <option value="ja">🇯🇵 日本語</option>
         <option value="ar">🇸🇦 العربية</option>
       </select>
-      <button class="gps-btn" onclick="useGPS()">📍 My Location</button>
-      <button class="notif-btn" id="notifBtn" onclick="toggleNotif()">🔔 Alerts</button>
+      <button class="gps-btn" onclick="useGPS()"><i class="wi wi-earthquake" style="margin-right:5px;font-size:14px;"></i>My Location</button>
+      <button class="notif-btn" id="notifBtn" onclick="toggleNotif()"><i class="wi wi-raindrops" style="margin-right:5px;font-size:14px;"></i>Alerts</button>
     </div>
   </div>
 
@@ -405,17 +406,31 @@ let lastData=null, clockInterval=null, mapObj=null, weatherLayer=null;
 let notifEnabled=false, notifCity='';
 let favs = JSON.parse(localStorage.getItem('wv_favs')||'[]');
 
-/* ── EMOJI MAP ── */
-function owmEmoji(id){
+/* ── WEATHER ICONS (weathericons lib) ── */
+function owmWiClass(id, night=false){
   const c=String(id);
-  if(c.startsWith('2'))return'⛈️';
-  if(c.startsWith('3'))return'🌦️';
-  if(c.startsWith('5'))return'🌧️';
-  if(c.startsWith('6'))return'❄️';
-  if(c.startsWith('7'))return'🌫️';
-  if(c==='800')return'☀️';
-  if(c.startsWith('8'))return'☁️';
-  return'🌡️';
+  if(c==='800') return night ? 'wi-night-clear' : 'wi-day-sunny';
+  if(c==='801') return night ? 'wi-night-alt-partly-cloudy' : 'wi-day-cloudy';
+  if(c==='802') return 'wi-cloud';
+  if(c==='803'||c==='804') return 'wi-cloudy';
+  if(c.startsWith('2')) return 'wi-thunderstorm';
+  if(c.startsWith('3')) return 'wi-sprinkle';
+  if(c.startsWith('5')) return 'wi-rain';
+  if(c.startsWith('6')) return 'wi-snow';
+  if(c==='701') return 'wi-fog';
+  if(c==='711') return 'wi-smoke';
+  if(c==='721') return 'wi-day-haze';
+  if(c==='731'||c==='761') return 'wi-dust';
+  if(c==='741') return 'wi-fog';
+  if(c==='751') return 'wi-sandstorm';
+  if(c==='762') return 'wi-volcano';
+  if(c==='771') return 'wi-strong-wind';
+  if(c==='781') return 'wi-tornado';
+  if(c.startsWith('7')) return 'wi-fog';
+  return 'wi-day-sunny';
+}
+function owmEmoji(id, night=false){
+  return `<i class="wi ${owmWiClass(id,night)}" style="font-size:22px;color:#fff;"></i>`;
 }
 function iconClass(id,isNight){
   const c=String(id);
@@ -558,18 +573,19 @@ function setBgGradient(id,isNight){
 }
 
 /* ── SUGGESTIONS ── */
+function wi(cls,txt){ return `<i class="wi ${cls}" style="margin-right:5px;font-size:15px;"></i>${txt}`; }
 function getSuggestions(temp,id,wind,humidity){
   const c=String(id); const chips=[];
-  if(temp>35)chips.push('🥤 Stay hydrated','🏠 Stay indoors','🧴 Apply sunscreen');
-  else if(temp>25)chips.push('😎 Great for a walk','👕 Light clothing');
-  else if(temp>15)chips.push('🧥 Light jacket','🚴 Good for cycling');
-  else if(temp>5)chips.push('🧣 Wear a coat','☕ Hot beverage time');
-  else chips.push('🧤 Bundle up!','❄️ Very cold outside');
-  if(c.startsWith('2')||c.startsWith('5')||c.startsWith('3'))chips.push('☂️ Carry umbrella','🚗 Drive carefully');
-  if(c.startsWith('6'))chips.push('⛄ Snow gear needed','🧊 Icy roads');
-  if(wind>40)chips.push('💨 Strong winds — secure loose items');
-  if(humidity>80)chips.push('💧 High humidity — wear breathable fabric');
-  if(temp>20&&!c.startsWith('2')&&!c.startsWith('5'))chips.push('🏃 Perfect for exercise','🌳 Great picnic weather');
+  if(temp>35)chips.push(wi('wi-hot','Stay hydrated'),wi('wi-thermometer','Stay indoors'),wi('wi-day-sunny','Apply sunscreen'));
+  else if(temp>25)chips.push(wi('wi-day-sunny','Great for a walk'),wi('wi-thermometer','Light clothing'));
+  else if(temp>15)chips.push(wi('wi-cloud','Light jacket needed'),wi('wi-day-windy','Good for cycling'));
+  else if(temp>5)chips.push(wi('wi-thermometer-exterior','Wear a coat'),wi('wi-snowflake-cold','Hot beverage time'));
+  else chips.push(wi('wi-snowflake-cold','Bundle up!'),wi('wi-snow','Very cold outside'));
+  if(c.startsWith('2')||c.startsWith('5')||c.startsWith('3'))chips.push(wi('wi-umbrella','Carry umbrella'),wi('wi-rain','Drive carefully'));
+  if(c.startsWith('6'))chips.push(wi('wi-snow','Snow gear needed'),wi('wi-snowflake-cold','Icy roads'));
+  if(wind>40)chips.push(wi('wi-strong-wind','Strong winds ahead'));
+  if(humidity>80)chips.push(wi('wi-humidity','High humidity today'));
+  if(temp>20&&!c.startsWith('2')&&!c.startsWith('5'))chips.push(wi('wi-day-sunny','Perfect for exercise'),wi('wi-day-cloudy','Great picnic weather'));
   return chips.slice(0,6);
 }
 
@@ -714,14 +730,14 @@ function renderAll(data){
   <div class="card">
     <div class="main-top">
       <div>
-        <div class="city-name">📍 ${city}</div>
+        <div class="city-name"><i class="wi wi-earthquake" style="font-size:18px;margin-right:6px;opacity:.7;"></i>${city}</div>
         <div class="city-date">${dateStr}</div>
-        <button class="add-fav-btn" style="margin-top:8px;" onclick="addFav('${cur.name}')">⭐ ${t('addFav')}</button>
+        <button class="add-fav-btn" style="margin-top:8px;" onclick="addFav('${cur.name}')"><i class="wi wi-stars" style="margin-right:5px;"></i>${t('addFav')}</button>
       </div>
       <div>
         <div class="clock-box" id="live-clock">--:--:--</div>
         <div class="clock-tz">${tzStr}</div>
-        <div class="sun-row">🌅 ${sr} &nbsp; 🌇 ${ss}</div>
+        <div class="sun-row"><i class="wi wi-sunrise" style="font-size:15px;margin-right:4px;"></i>${sr} &nbsp; <i class="wi wi-sunset" style="font-size:15px;margin-right:4px;"></i>${ss}</div>
       </div>
     </div>
 
@@ -738,21 +754,21 @@ function renderAll(data){
         <div class="thermo-label">${temp}°</div>
         <div class="thermo"><div class="thermo-fill" id="thermo-fill" style="height:0%"></div></div>
         <div class="thermo-bulb"></div>
-        <div class="thermo-label">🌡️</div>
+        <div class="thermo-label"><i class="wi wi-thermometer" style="font-size:14px;"></i></div>
       </div>
     </div>
 
     <div class="stats-grid">
-      <div class="stat"><div class="stat-lbl">${t('humidity')}</div><div class="stat-val">${hum}%</div><div class="stat-sub">${t('dewPt')} ${dew}°C</div></div>
-      <div class="stat"><div class="stat-lbl">${t('wind')}</div><div class="stat-val">${wind}</div><div class="stat-sub">km/h</div></div>
-      <div class="stat"><div class="stat-lbl">${t('visibility')}</div><div class="stat-val">${vis}</div><div class="stat-sub">km</div></div>
-      <div class="stat"><div class="stat-lbl">${t('pressure')}</div><div class="stat-val">${pres}</div><div class="stat-sub">mb</div></div>
+      <div class="stat"><div class="stat-lbl"><i class="wi wi-humidity" style="font-size:14px;margin-right:4px;"></i>${t('humidity')}</div><div class="stat-val">${hum}%</div><div class="stat-sub">${t('dewPt')} ${dew}°C</div></div>
+      <div class="stat"><div class="stat-lbl"><i class="wi wi-strong-wind" style="font-size:14px;margin-right:4px;"></i>${t('wind')}</div><div class="stat-val">${wind}</div><div class="stat-sub">km/h</div></div>
+      <div class="stat"><div class="stat-lbl"><i class="wi wi-day-fog" style="font-size:14px;margin-right:4px;"></i>${t('visibility')}</div><div class="stat-val">${vis}</div><div class="stat-sub">km</div></div>
+      <div class="stat"><div class="stat-lbl"><i class="wi wi-barometer" style="font-size:14px;margin-right:4px;"></i>${t('pressure')}</div><div class="stat-val">${pres}</div><div class="stat-sub">mb</div></div>
     </div>
   </div>
 
   <!-- AQI CARD -->
   ${aqiVal ? `<div class="card">
-    <div class="sec-title">${t('aqi')}</div>
+    <div class="sec-title"><i class="wi wi-smoke" style="font-size:14px;margin-right:6px;"></i>${t('aqi')}</div>
     <div class="aqi-row">
       <div><div style="font-size:28px;font-weight:300;">${aqiLabel(aqiVal)}</div><div style="font-size:13px;color:var(--muted);">AQI ${aqiVal}/5</div></div>
       <div style="text-align:right;font-size:12px;color:var(--muted);">
@@ -767,49 +783,49 @@ function renderAll(data){
 
   <!-- SUGGESTIONS -->
   <div class="suggestion-box">
-    <div class="sug-title">🧠 ${t('suggestions')} — ${t('outfits')}</div>
+    <div class="sug-title"><i class="wi wi-day-sunny" style="font-size:15px;margin-right:6px;"></i>${t('suggestions')} — ${t('outfits')}</div>
     <div class="sug-items">${sugs.map(s=>`<span class="sug-chip">${s}</span>`).join('')}</div>
   </div>
 
   <!-- HOURLY -->
   <div class="card">
-    <div class="sec-title">${t('hourly')}</div>
+    <div class="sec-title"><i class="wi wi-time-1" style="font-size:13px;margin-right:6px;"></i>${t('hourly')}</div>
     <div class="hourly-scroll">
-      ${hourly.map((h,i)=>`<div class="h-card ${i===0?'now':''}"><div class="h-time">${h.time}</div><div class="h-ico">${owmEmoji(h.id)}</div><div class="h-temp">${h.temp}°</div></div>`).join('')}
+      ${hourly.map((h,i)=>`<div class="h-card ${i===0?'now':''}"><div class="h-time">${h.time}</div><div class="h-ico">${owmEmoji(h.id,isNight)}</div><div class="h-temp">${h.temp}°</div></div>`).join('')}
     </div>
   </div>
 
   <!-- TEMP GRAPH -->
   <div class="card">
-    <div class="sec-title">📊 Temperature Graph (7 days)</div>
+    <div class="sec-title"><i class="wi wi-thermometer" style="font-size:13px;margin-right:6px;"></i>Temperature Graph (7 days)</div>
     <div style="margin-bottom:8px;display:flex;gap:16px;">
-      <span style="font-size:12px;color:rgba(249,168,37,1);">— High</span>
-      <span style="font-size:12px;color:rgba(96,165,250,1);">— Low</span>
+      <span style="font-size:12px;color:rgba(249,168,37,1);"><i class="wi wi-thermometer-exterior"></i> High</span>
+      <span style="font-size:12px;color:rgba(96,165,250,1);"><i class="wi wi-thermometer-exterior"></i> Low</span>
     </div>
     <canvas id="tempCanvas"></canvas>
   </div>
 
   <!-- 7 DAY -->
   <div class="card">
-    <div class="sec-title">${t('weekly')}</div>
+    <div class="sec-title"><i class="wi wi-forecast-io-partly-cloudy-day" style="font-size:13px;margin-right:6px;"></i>${t('weekly')}</div>
     ${days.map((d,i)=>{
       const pct=absHi===absLo?50:((d.hi-absLo)/(absHi-absLo))*100;
       const cn=String(d.id).startsWith('2')?'Storm':String(d.id).startsWith('5')||String(d.id).startsWith('3')?'Rain':String(d.id).startsWith('6')?'Snow':String(d.id).startsWith('7')?'Fog':d.id===800?'Clear':'Clouds';
-      return `<div class="day-row"><div class="day-nm">${dayName(d.dt,tz,i)}</div><div class="day-ico">${owmEmoji(d.id)}</div><div class="day-cond">${cn}</div><div class="day-lo">${Math.round(d.lo)}°</div><div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(pct)}%"></div></div><div class="day-hi">${Math.round(d.hi)}°</div></div>`;
+      return `<div class="day-row"><div class="day-nm">${dayName(d.dt,tz,i)}</div><div class="day-ico">${owmEmoji(d.id,isNight)}</div><div class="day-cond">${cn}</div><div class="day-lo">${Math.round(d.lo)}°</div><div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(pct)}%"></div></div><div class="day-hi">${Math.round(d.hi)}°</div></div>`;
     }).join('')}
   </div>
 
   <!-- EXTRA -->
   <div class="extra-grid" style="margin-bottom:16px;">
-    <div class="extra-box"><div class="extra-lbl">${t('uvIndex')}</div><div class="extra-val">—</div><div class="uv-bg"><div class="uv-fill" style="width:40%"></div></div><div class="extra-sub">Moderate (est.)</div></div>
-    <div class="extra-box"><div class="extra-lbl">${t('range')}</div><div class="extra-val">${Math.round(days[0].lo)}° – ${Math.round(days[0].hi)}°</div><div class="extra-sub">Low / High</div></div>
-    <div class="extra-box"><div class="extra-lbl">${t('sunrise')}</div><div class="extra-val" style="font-size:20px;">${sr}</div><div class="extra-sub">${t('sunset')} at ${ss}</div></div>
-    <div class="extra-box"><div class="extra-lbl">${t('dewPt')}</div><div class="extra-val" style="font-size:20px;">${dew}°C</div><div class="extra-sub">${t('humidity')} ${hum}%</div></div>
+    <div class="extra-box"><div class="extra-lbl"><i class="wi wi-day-sunny" style="font-size:13px;margin-right:4px;"></i>${t('uvIndex')}</div><div class="extra-val">—</div><div class="uv-bg"><div class="uv-fill" style="width:40%"></div></div><div class="extra-sub">Moderate (est.)</div></div>
+    <div class="extra-box"><div class="extra-lbl"><i class="wi wi-thermometer" style="font-size:13px;margin-right:4px;"></i>${t('range')}</div><div class="extra-val">${Math.round(days[0].lo)}° – ${Math.round(days[0].hi)}°</div><div class="extra-sub">Low / High</div></div>
+    <div class="extra-box"><div class="extra-lbl"><i class="wi wi-sunrise" style="font-size:13px;margin-right:4px;"></i>${t('sunrise')}</div><div class="extra-val" style="font-size:20px;">${sr}</div><div class="extra-sub"><i class="wi wi-sunset" style="font-size:12px;margin-right:3px;"></i>${t('sunset')} at ${ss}</div></div>
+    <div class="extra-box"><div class="extra-lbl"><i class="wi wi-raindrop" style="font-size:13px;margin-right:4px;"></i>${t('dewPt')}</div><div class="extra-val" style="font-size:20px;">${dew}°C</div><div class="extra-sub"><i class="wi wi-humidity" style="font-size:12px;margin-right:3px;"></i>${t('humidity')} ${hum}%</div></div>
   </div>
 
   <!-- MAP -->
   <div class="card" style="padding:14px;">
-    <div class="sec-title">${t('map')} — Precipitation Layer</div>
+    <div class="sec-title"><i class="wi wi-rain" style="font-size:13px;margin-right:6px;"></i>${t('map')} — Precipitation Layer</div>
     <div id="map"></div>
   </div>
   `;
@@ -917,7 +933,7 @@ function renderFavs(){
   const row=document.getElementById('favRow');
   if(!row)return;
   row.innerHTML=favs.length?
-    favs.map(f=>`<div class="fav-chip" onclick="loadWeather('${f}')">⭐ ${f} <span class="rm" onclick="event.stopPropagation();removeFav('${f}')">✕</span></div>`).join('')
+    favs.map(f=>`<div class="fav-chip" onclick="loadWeather('${f}')"><i class="wi wi-stars" style="font-size:13px;"></i> ${f} <span class="rm" onclick="event.stopPropagation();removeFav('${f}')">✕</span></div>`).join('')
     :'';
 }
 
@@ -925,11 +941,11 @@ function renderFavs(){
 function toggleNotif(){
   if(!notifEnabled){
     Notification.requestPermission().then(p=>{
-      if(p==='granted'){notifEnabled=true;document.getElementById('notifBtn').textContent='🔕 Alerts ON';}
+      if(p==='granted'){notifEnabled=true;document.getElementById('notifBtn').innerHTML='<i class="wi wi-raindrops" style="margin-right:5px;font-size:14px;"></i>Alerts ON';}
     });
   } else {
     notifEnabled=false;
-    document.getElementById('notifBtn').textContent='🔔 Alerts';
+    document.getElementById('notifBtn').innerHTML='<i class="wi wi-raindrops" style="margin-right:5px;font-size:14px;"></i>Alerts';
   }
 }
 
