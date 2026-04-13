@@ -1,0 +1,83 @@
+body {
+  margin: 0;
+  font-family: Arial;
+  background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+  color: white;
+  text-align: center;
+}
+
+h1 {
+  margin: 20px;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: repeat(2, 150px);
+  gap: 30px;
+  justify-content: center;
+}
+
+.card {
+  height: 150px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: scale(1.1);
+}
+
+/* SUN */
+.sun {
+  width: 50px;
+  height: 50px;
+  background: yellow;
+  border-radius: 50%;
+  box-shadow: 0 0 30px orange;
+  animation: spin 5s linear infinite;
+}
+
+/* CLOUD */
+.cloud {
+  width: 60px;
+  height: 30px;
+  background: lightgray;
+  border-radius: 20px;
+  animation: move 3s infinite alternate;
+}
+
+/* RAIN */
+.rain {
+  width: 5px;
+  height: 20px;
+  background: cyan;
+  animation: rain 1s infinite linear;
+}
+
+/* MOON */
+.moon {
+  width: 50px;
+  height: 50px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: -10px 0 0 0 #2c5364;
+}
+
+/* ANIMATIONS */
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes move {
+  100% { transform: translateX(10px); }
+}
+
+@keyframes rain {
+  100% { transform: translateY(20px); opacity: 0; }
+}
